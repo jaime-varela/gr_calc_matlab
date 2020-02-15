@@ -1,6 +1,7 @@
 classdef gr_calc
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
+    %gr_calc a class to compute standard GR objects
+    %   constructor: gr_calc(metric,coordinates)
+    %   various methods to compute standard general relativity objects.
     
     properties
         grMetric;
@@ -9,6 +10,16 @@ classdef gr_calc
         grIMetric;
         grMetricDerv = {};
         grIMetricDerv = {};
+    end
+
+    properties (Access = private)
+        % bool variables representing wether or not 
+        % some gr objects have been computed
+        isComputedChristoffel = false;
+        isComputedRiemann = false;
+        isComputedRicci = false;
+        isComputedRScalar = false;
+        isComputedEinstein = false;
     end
     
     methods
@@ -50,6 +61,14 @@ classdef gr_calc
             % with nargin and nargout
             if nargin == 4
                 % assume R_{ijkl}
+            end
+
+            if nargin == 2
+                % assume R^{i j}_{k l} or some other combo with non zero contravariant and covariant indeces
+            end
+
+            if nargin == 1
+                % assume R^{i j k l}
             end
         end
                 
