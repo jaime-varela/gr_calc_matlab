@@ -1,4 +1,4 @@
-classdef gr_calc
+classdef gr_calc  < handle
     %gr_calc a class to compute standard GR objects
     %   constructor: gr_calc(metric,coordinates)
     %   various methods to compute standard general relativity objects.
@@ -10,6 +10,13 @@ classdef gr_calc
         grIMetric;
         grMetricDerv = {};
         grIMetricDerv = {};
+
+        % usage \Gamma^i_{kl} = this.grChristoffel(k,l,i)
+        grChristoffel = {};
+        grRiemann = {};
+        grRicci = {};
+        grRscalar = {};
+        grEinstein = {};
     end
 
     properties (Access = private)
@@ -42,18 +49,17 @@ classdef gr_calc
             end
         end
         
-        function christoffelIndexed = christoffel(obj,i,covIndArray)
+        function christoffelIndexed = christoffel(obj,ind,covIndArray)
             %christoffel i is the upper index and covIndArray is a 2-array
             %of indeces.
             %   Standard definition of the Christoffel symbols
             k = covIndArray(1);
             l = covIndArray(2);
-            gdervl = obj.grMetricDerv(:,:,l);
-            gdervk = obj.grIMetricDerv(:,:,k);
-            christoffelIndexed = 0;
-            for m = 1:obj.grDimension
-                christoffelIndexed =christoffelIndexed + (1/2)* obj.grIMetric(i,m)*(gdervl(m,k) + gdervk(m,l) - obj.grIMetricDerv(l,k,m) );
+            if ~obj.isComputedChristoffel
+                obj.computeChristoffel();
             end
+
+            christoffelIndexed = obj.grChristoffel(k,l,ind);
         end
         
         function riemannIndexed = riemann(obj, arg)
@@ -72,6 +78,29 @@ classdef gr_calc
             end
         end
                 
+    end
+
+    methods (Access = private)
+        function computeChristoffel(obj)
+            %TODO: figure out a better way to compute this which is more efficient and uses symmetry
+            obj.grChristoffel = sym('grStuff',[obj.grDimension,obj.grDimension,obj.grDimension]);
+            for ind = 1:obj.grDimension
+                for l = 1:obj.grDimension
+                    for k = 1:obj.grDimension
+                        chTerm = 0;
+                        for m = 1:obj.grDimension
+                            chTerm =chTerm + (1/2)* obj.grIMetric(ind,m)*(obj.grIMetricDerv(m,k,l) ...
+                             + obj.grIMetricDerv(m,l,k) ...
+                             - obj.grIMetricDerv(l,k,m) );
+                        end                                                            
+                        obj.grChristoffel(k,l,ind) = chTerm;
+                    end
+                end
+            end
+            obj.isComputedChristoffel = true;
+        end
+
+
     end
 end
 
