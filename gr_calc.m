@@ -54,6 +54,7 @@ classdef gr_calc  < handle
                obj.grIMetricDerv(:,:,iCoordDerv) = -1*(obj.grIMetric)*( obj.grMetricDerv(:,:,iCoordDerv) )*(obj.grIMetric);
             end
         end
+
         
         function christoffelIndexed = christoffel(obj,ind,covIndArray)
             %christoffel i is the upper index and covIndArray is a 2-array
@@ -122,7 +123,12 @@ classdef gr_calc  < handle
 
             einsteinIndexed = obj.grEinstein(alph,bet);            
         end
-                
+
+        function computeAllObjects(obj)
+            % the following call should calculate and store all objects
+            obj.einstein(0,0);
+        end        
+
     end
 
     methods (Access = private)
