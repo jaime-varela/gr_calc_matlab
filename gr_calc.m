@@ -86,30 +86,41 @@ classdef gr_calc  < handle
             end
 
             if nargin == 2
-                % assume R^{i j}_{k l} or some other combo with non zero contravariant and covariant indeces
-                contraIndArray = arg{1};
-                covarIndArray = arg{2};
-                if length(contraIndArray) == 1
-                    iv = contraIndArray(1);
+                % assume R^{i}_{j k l} or some other combo with non zero contravariant and covariant indeces
+                    iv = arg{1};
+                    covarIndArray = arg{2};
                     jv = covarIndArray(1);
                     kv = covarIndArray(2);
                     lv = covarIndArray(3);
                     riemannIndexed = obj.grRiemannUpper(jv,kv,lv,iv);
-                else
-                    %TODO TODO: FIXME: implement mixed index
-                end
             end
 
             if nargin == 1
-                % assume R^{i j k l}
+                % assume R^{i j k l} with an index array as input
+                %TODO: implement the sum
             end
         end
 
         function ricciIndexed = ricci(obj, alph,bet)
-            if ~isComputedRicci
+            if ~obj.isComputedRicci
                 obj.computeRicci();
             end
             ricciIndexed = obj.grRicci(alph,bet);
+        end
+
+        function rScalar = ricciScalar(obj)
+            if ~obj.isComputedRScalar
+                obj.computeRScalar();
+            end
+            rScalar = obj.grRscalar;            
+        end
+
+        function einsteinIndexed = einstein(obj,alph,bet)
+            if ~obj.isComputedEinstein
+                obj.computeEinstein();
+            end
+
+            einsteinIndexed = obj.grEinstein(alph,bet);            
         end
                 
     end
@@ -172,7 +183,7 @@ classdef gr_calc  < handle
         end
 
         function computeRicci(obj)
-            if ~isComputedRiemann
+            if ~obj.isComputedRiemann
                 obj.computeRiemann();
             end
             dim = obj.grDimension;
@@ -187,6 +198,22 @@ classdef gr_calc  < handle
                 end
             end
             obj.isComputedRicci = true;            
+        end
+
+        function computeRScalar(obj)
+            if ~obj.isComputedRicci
+                obj.computeRicci();
+            end
+            obj.grRscalar = trace(obj.grIMetric * obj.grRicci);
+            obj.isComputedRScalar = true;                        
+        end
+
+        function computeEinstein(obj)
+            if ~obj.isComputedRScalar
+                obj.computeRScalar();
+            end
+
+            obj.grEinstein = obj.grRicci - (1/2)*obj.grMetric * obj.grRscalar;            
         end
 
 
