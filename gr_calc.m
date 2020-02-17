@@ -69,34 +69,34 @@ classdef gr_calc  < handle
             christoffelIndexed = obj.grChristoffel(k,l,ind);
         end
         
-        function riemannIndexed = riemann(obj, arg)
+        function riemannIndexed = riemann(obj, varargin)
         %   Computes the riemann tensor for a variety of index configurations
         %   see the documentation.
         %
-            if ~isComputedRiemann
+            if ~obj.isComputedRiemann
                 obj.computeRiemann();
             end
-
-            if nargin == 4
+            numArgs = nargin -1;
+            if numArgs == 4
                 % assume R_{ijkl}
-                iv = arg{1};
-                jv = arg{2};
-                kv = arg{3};
-                lv = arg{4};
+                iv = varargin{1};
+                jv = varargin{2};
+                kv = varargin{3};
+                lv = varargin{4};
                 riemannIndexed = obj.grRiemann(iv,jv,kv,lv);
             end
 
-            if nargin == 2
+            if numArgs == 2
                 % assume R^{i}_{j k l} or some other combo with non zero contravariant and covariant indeces
-                    iv = arg{1};
-                    covarIndArray = arg{2};
+                    iv = varargin{1};
+                    covarIndArray = varargin{2};
                     jv = covarIndArray(1);
                     kv = covarIndArray(2);
                     lv = covarIndArray(3);
                     riemannIndexed = obj.grRiemannUpper(jv,kv,lv,iv);
             end
 
-            if nargin == 1
+            if numArgs == 1
                 % assume R^{i j k l} with an index array as input
                 %TODO: implement the sum
             end
@@ -140,9 +140,9 @@ classdef gr_calc  < handle
                     for k = 1:obj.grDimension
                         chTerm = 0;
                         for m = 1:obj.grDimension
-                            chTerm =chTerm + (1/2)* obj.grIMetric(ind,m)*(obj.grIMetricDerv(m,k,l) ...
-                             + obj.grIMetricDerv(m,l,k) ...
-                             - obj.grIMetricDerv(l,k,m) );
+                            chTerm =chTerm + (1/2)* obj.grIMetric(ind,m)*(obj.grMetricDerv(k,m,l) ...
+                             + obj.grMetricDerv(m,l,k) ...
+                             - obj.grMetricDerv(l,k,m) );
                         end                                                            
                         obj.grChristoffel(k,l,ind) = chTerm;
                     end
@@ -157,17 +157,17 @@ classdef gr_calc  < handle
                 obj.computeChristoffel();
             end
             dim = obj.grDimension;
-            obj.grRiemann = sym('grStuff',dim,dim,dim,dim);
-            obj.grRiemannUpper = sym('grStuff',dim,dim,dim,dim);
+            obj.grRiemann = sym('grStuff',[dim,dim,dim,dim]);
+            obj.grRiemannUpper = sym('grStuff',[dim,dim,dim,dim]);
             % TODO: get rid of all these for loops and use the Riemann symmetry relations to improve storage
             for bet = 1:dim
                 for gamm = 1:dim
-                    for delt = 1:n
+                    for delt = 1:dim
                         for alph = 1:dim
-                            upperRiemannVal = diff(obj.grChristoffel(bet,delt,alph),obj.grCoordinates(gamm) - ...
+                            upperRiemannVal = diff(obj.grChristoffel(bet,delt,alph),obj.grCoordinates(gamm)) - ...
                             diff(obj.grChristoffel(bet,gamm,alph),obj.grCoordinates(delt));
 
-                            for mu = 1:n
+                            for mu = 1:dim
                                 upperRiemannVal = upperRiemannVal + ...
                                 (obj.grChristoffel(mu,gamm,alph) * obj.grChristoffel(bet,delt,mu) - ...
                                 obj.grChristoffel(mu,delt,alph) * obj.grChristoffel(bet,gamm,mu));
@@ -177,9 +177,9 @@ classdef gr_calc  < handle
                         for cind = 1:dim
                             lowerRiemannVal = obj.grMetric(cind,1)*obj.grRiemannUpper(bet,gamm,delt,1);
                             for sumInd = 2:dim
-                                lowerRiemannVal = lowerRiemannVal + obj.grMetric(cind,sumInd)*obj.grRiemannUpper(bet,gamm,delt,sumInd)
+                                lowerRiemannVal = lowerRiemannVal + obj.grMetric(cind,sumInd)*obj.grRiemannUpper(bet,gamm,delt,sumInd);
                             end
-                            obj.grRiemann(bet,gamm,delt,cind) = lowerRiemannVal;                
+                            obj.grRiemann(cind,bet,gamm,delt) = lowerRiemannVal;                
                         end
                     end                    
                 end                
@@ -193,7 +193,7 @@ classdef gr_calc  < handle
                 obj.computeRiemann();
             end
             dim = obj.grDimension;
-            obj.grRicci = sym('grStuff',dim,dim);
+            obj.grRicci = sym('grStuff',[dim,dim]);
             for alph = 1:dim
                 for bet = 1:dim
                     ricciVal = obj.grRiemannUpper(alph,1,bet,1);
