@@ -134,11 +134,15 @@ classdef gr_calc  < handle
     methods (Access = private)
         function computeChristoffel(obj)
             %TODO: figure out a better way to compute this which is more efficient and uses symmetry
-            obj.grChristoffel = sym('grStuff',[obj.grDimension,obj.grDimension,obj.grDimension]);
+            obj.grChristoffel = sym(zeros([obj.grDimension,obj.grDimension,obj.grDimension]));
             for ind = 1:obj.grDimension
-                for l = 1:obj.grDimension
-                    for k = 1:obj.grDimension
+                for k = 1:obj.grDimension
+                    for l = 1:obj.grDimension
                         chTerm = 0;
+                        if l < k
+                            obj.grChristoffel(k,l,ind) = obj.grChristoffel(l,k,ind);
+                            continue;
+                        end
                         for m = 1:obj.grDimension
                             chTerm =chTerm + (1/2)* obj.grIMetric(ind,m)*(obj.grMetricDerv(k,m,l) ...
                              + obj.grMetricDerv(m,l,k) ...
@@ -157,15 +161,20 @@ classdef gr_calc  < handle
                 obj.computeChristoffel();
             end
             dim = obj.grDimension;
-            obj.grRiemann = sym('grStuff',[dim,dim,dim,dim]);
-            obj.grRiemannUpper = sym('grStuff',[dim,dim,dim,dim]);
+            obj.grRiemann = sym(zeros([dim,dim,dim,dim]));
+            obj.grRiemannUpper = sym(zeros([dim,dim,dim,dim]));
             % TODO: get rid of all these for loops and use the Riemann symmetry relations to improve storage
+            chDervs = sym(zeros([dim,dim,dim,dim]));
+            for dervInd = 1:dim
+                chDervs(:,:,:,dervInd) = diff(obj.grChristoffel,obj.grCoordinates(dervInd));
+            end
+            
             for bet = 1:dim
                 for gamm = 1:dim
                     for delt = 1:dim
                         for alph = 1:dim
-                            upperRiemannVal = diff(obj.grChristoffel(bet,delt,alph),obj.grCoordinates(gamm)) - ...
-                            diff(obj.grChristoffel(bet,gamm,alph),obj.grCoordinates(delt));
+                            upperRiemannVal = chDervs(bet,delt,alph,gamm) - ...
+                            chDervs(bet,gamm,alph,delt);
 
                             for mu = 1:dim
                                 upperRiemannVal = upperRiemannVal + ...
